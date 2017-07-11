@@ -13,13 +13,11 @@ Things it can do:
 """
 
 # To import discord functionalities
-from __future__ import print_function
 import discord
 import asyncio
 import pyowm
+import pylast
 from discord.ext import commands
-import sys
-from mylastfm import lastfm_network
 
 client = discord.Client()
 
@@ -112,15 +110,15 @@ async def on_message(message):
         detailed_stat = w.get_detailed_status()
         await client.send_message(message.channel, '{} at {}'.format(detailed_stat.title(), city))
 
+    # last.fm scrobbling
     elif message.content.startswith('!np'):
         message = await client.wait_for_message(author=message.author)
-        if len(sys.argv) > 1:
-            username = sys.argv[1]
-        else:
-            username = message.content[len('!np'):].strip()
-            now_playing = lastfm_network.get_user(username).get_now_playing()
+        network = pylast.LastFMNetwork(api_key="last.fm API KEY",
+                                       api_secret="last.fm API SECRET", username="last.fm USERNAME",
+                                       password_hash="last.fm PASSWORD HASH") # use pylast.md5("last.fm PASSWORD") and print it to retrieve password hash
 
-        await client.send_message(message.channel, '{} is now listening to {}'.format(username, now_playing))
+        lsusername = message.content[len('!np'):].strip()
+        await client.send_message(message.channel, '{} at {}'.format(lsusername, network.get_user(lsusername).get_now_playing()))
 
 # Replace string with your bot token
 client.run('Discord Bot Token')
