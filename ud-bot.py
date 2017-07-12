@@ -23,6 +23,11 @@ client = discord.Client()
 
 # OpenWeatherMap API key for weather related stuff
 owm = pyowm.OWM('OpenWeatherMapAPI Key')
+# last.fm API for scrobbling related stuff
+lfmnetwork = pylast.LastFMNetwork(api_key="last.fm API KEY",
+                                       api_secret="last.fm API SECRET", username="last.fm USERNAME",
+                                       password_hash="last.fm PASSWORD HASH") # use pylast.md5("last.fm PASSWORD") and print it to retrieve password hash
+
 
 # Timer for how long these messages should last, modify to your value and these are in seconds
 SLEEP_TIME = 25
@@ -112,13 +117,8 @@ async def on_message(message):
 
     # last.fm scrobbling
     elif message.content.startswith('!np'):
-        message = await client.wait_for_message(author=message.author)
-        network = pylast.LastFMNetwork(api_key="last.fm API KEY",
-                                       api_secret="last.fm API SECRET", username="last.fm USERNAME",
-                                       password_hash="last.fm PASSWORD HASH") # use pylast.md5("last.fm PASSWORD") and print it to retrieve password hash
-
-        lsusername = message.content[len('!np'):].strip()
-        await client.send_message(message.channel, '{} at {}'.format(lsusername, network.get_user(lsusername).get_now_playing()))
+        lfmusername = message.content.replace('!np', '').strip()
+        await client.send_message(message.channel, '{} is listening to {}'.format(lfmusername, network.get_user(lsusername).get_now_playing()))
 
 # Replace string with your bot token
 client.run('Discord Bot Token')
