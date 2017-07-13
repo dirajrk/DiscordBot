@@ -8,7 +8,8 @@ Things it can do:
 * Barebones Google Search
 * Retrieve user avatar
 * Retrieve weather status
-* Retrieve last.fm now playing status
+* Retrieve last.fm scrobbling
+* Retrieve Steam profile info
 (Some might need admin/mod permissions)
 """
 
@@ -17,6 +18,7 @@ import discord
 import asyncio
 import pyowm
 import pylast
+import steamapi
 from discord.ext import commands
 
 client = discord.Client()
@@ -27,8 +29,8 @@ owm = pyowm.OWM('OpenWeatherMapAPI Key')
 lfmnetwork = pylast.LastFMNetwork(api_key="last.fm API KEY",
                                        api_secret="last.fm API SECRET", username="last.fm USERNAME",
                                        password_hash="last.fm PASSWORD HASH") # use pylast.md5("last.fm PASSWORD") and print it to retrieve password hash
-
-
+# Steam API
+steamapi.core.APIConnection(api_key="STEAM API KEY", validate_key=True)
 # Timer for how long these messages should last, modify to your value and these are in seconds
 SLEEP_TIME = 25
 
@@ -118,7 +120,28 @@ async def on_message(message):
     # last.fm scrobbling
     elif message.content.startswith('!np'):
         lfmusername = message.content.replace('!np', '').strip()
-        await client.send_message(message.channel, '{} is listening to {}'.format(lfmusername, network.get_user(lsusername).get_now_playing()))
+
+        if lfmnetwork.get_user(lfmusername).get_now_playing() == None:
+            listenstat = " last listened to {}".format(lfmnetwork.get_user(lfmusername).get_recent_tracks(limit=1)[0][0])
+        else:
+            listenstat = " is currently listening to {} ".format(lfmnetwork.get_user(lfmusername).get_now_playing())
+
+        await client.send_message(message.channel, '{}{}'.format(lfmusername, listenstat))
+
+    # Steam profile retrieval
+    elif message.content.startswith('!steam'):
+        steamusermsg = message.content.replace('!steam ', '').strip()
+        steamuser = steamapi.user.SteamUser(userurl=steamusermsg)
+
+        me = steamuser
+        user_recent_play = me.recently_played
+        user_level = me.level
+        user_state = me.state
+        if user_state == 1:
+            actual_user_state = "Online"
+        else:
+            actual_user_state = "Offline"
+        await client.send_message(message.channel, "**Steam Name: ** {} \n**Level: ** {} \n**Status: **{} \n**Recently Played: **{}".format(me, user_level, actual_user_state, user_recent_play[0]))
 
 # Replace string with your bot token
 client.run('Discord Bot Token')
